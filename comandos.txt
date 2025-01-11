@@ -45,5 +45,80 @@ sam build
 sam deploy --guided --stack-name ws-serverless-patterns-users
 
 
-### 
+### Dependências requirements.txt
+datetime
+boto3
+python-jose
+
+
+### Construção e Implantação do template
+
+cd ~/environment/ws-serverless-patterns/users
+sam build && sam deploy
+
+
+### Invocando um evento localmente - teste POST
+
+sam local invoke -e events/event-post-user.json -n env.json
+
+
+### Verificando se o dado foi inserido no DynamoDB
+
+aws dynamodb get-item --table-name ws-serverless-patterns-users-Users --key '{"userid": {"S": "<userid-from-response>"}}' 
+
+
+### faça a construção e implantação
+
+sam build && sam deploy
+
+
+### Guarde o valor do endpoint
+
+export API_ENDPOINT=$(aws cloudformation describe-stacks --stack-name ws-serverless-patterns-users --output text --query 'Stacks[0].Outputs[?OutputKey==`APIEndpoint`].OutputValue')
+echo "API endpoint: $API_ENDPOINT"
+
+### Teste a API
+
+curl $API_ENDPOINT/users
+
+### faça a construção e implantação
+
+sam build && sam deploy
+
+
+### Verifique a segurança da API
+
+curl $API_ENDPOINT/users
+
+
+
+### Comando CognitoAuthCommand
+
+aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH --client-id 463ocrp3gffc5rdkfam8gfn7aa --auth-parameters USERNAME=<username>,PASSWORD=<password> --query 'AuthenticationResult.IdToken' --output text     
+
+
+### Crie uma varíavel do ambiente do ID_TOKEN.
+
+export ID_TOKEN=$(<Cognito authentication command>)
+echo $ID_TOKEN
+
+
+### Teste a API com o ID_TOKEN
+
+curl $API_ENDPOINT/users -H "Authorization:$ID_TOKEN"
+
+
+### Teste com o ID_TOKEN e ID Principal
+
+curl $API_ENDPOINT/users/<sub-value> -H "Authorization:$ID_TOKEN"
+
+
+### Adiconar dados via API
+
+curl --location --request PUT "$API_ENDPOINT/users/<SUB-VALUE>" --data-raw '{"name": "My name is <TYPE YOUR NAME HERE>"}' --header "Authorization: $ID_TOKEN" --header "Content-Type: application/json"
+
+
+### Acessar todos os usuários
+
+curl $API_ENDPOINT/users -H "Authorization:$ID_TOKEN"
 
